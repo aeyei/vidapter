@@ -10,6 +10,7 @@ A powerful tool for processing videos and performing RAG-based question answerin
 - Perform RAG-based question answering using GPT-4 Vision
 - Support for both text and image retrieval
 - Progress tracking and detailed logging
+- RTSP streaming support with automatic frame processing and embedding generation
 
 ## Installation
 
@@ -52,6 +53,45 @@ vidapter query "What is happening in the video?" --output-dir ./my_video
 vidapter query "What is happening in the video?" --similarity-top-k 5 --image-similarity-top-k 3
 ```
 
+### RTSP Streaming
+
+```python
+from vidapter import RTSPStreamer, RAGConfig
+
+# Create RAG configuration
+config = RAGConfig(
+    output_folder="./rtsp_frames",  # Directory to store frames and embeddings
+    vector_store_uri="lancedb",
+    text_collection="rtsp_text_collection",
+    image_collection="rtsp_image_collection"
+)
+
+# Initialize RTSP streamer
+streamer = RTSPStreamer(
+    rtsp_url="rtsp://your-camera-url",
+    frame_interval=1.0,  # Capture one frame per second
+    output_dir="./rtsp_frames"
+)
+
+# Set up RAG engine
+streamer.setup_rag_engine(config=config, api_key="your-openai-api-key")
+
+# Start streaming and processing
+streamer.start()
+
+# The streamer will automatically:
+# 1. Capture frames from the RTSP stream
+# 2. Save frames to disk with timestamps
+# 3. Compute embeddings using the RAG engine
+# 4. Store embeddings in the vector store
+
+# Query the processed frames
+retrieved_images, retrieved_text = streamer.rag_engine.retrieve("your query here")
+
+# Stop streaming when done
+streamer.stop()
+```
+
 ### Command Line Options
 
 #### Common Options
@@ -79,6 +119,10 @@ output/
 └── mixed_data/          # Processed data
     ├── frame*.png       # Extracted video frames
     └── output_text.txt  # Transcribed text
+
+rtsp_frames/            # RTSP stream output
+├── frame_*.jpg         # Captured frames with timestamps
+└── embeddings/         # Vector store for embeddings
 ```
 
 ## Development
